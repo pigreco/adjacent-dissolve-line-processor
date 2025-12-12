@@ -127,7 +127,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
         <li><b>Lines dissolved by attributes:</b> Segmenti dissolti per (campo, nro, id)</li>
         </ol>
         <hr>
-        <p><b>Autore:</b> Salvatore Fiandaca - 2025</p>
+        <p><b>Autore:</b> Salvatore Fiandaca - 2025 | <b>Versione:</b> v1.0</p>
         """)
 
     def initAlgorithm(self, config=None):
