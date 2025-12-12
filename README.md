@@ -1,6 +1,6 @@
 # Dissolve Adjacent by Expression
 
-Algoritmo Processing per QGIS che dissolve poligoni adiacenti basandosi su un'espressione e genera layer lineari dai bordi.
+Algoritmo Processing per QGIS che dissolve poligoni adiacenti basandosi su un'espressione e genera layer lineari dai bordi (NB: il layer poligonale deve avere un attributo `note` per funzionare!).
 
 ![](esempio.png)
 
