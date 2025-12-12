@@ -1,6 +1,6 @@
 # Dissolve Adjacent by Expression
 
-Algoritmo Processing per QGIS che dissolve poligoni adiacenti basandosi su un'espressione e genera layer lineari dai bordi (NB: il layer poligonale deve avere un attributo `note` per funzionare!).
+Algoritmo Processing per QGIS che dissolve poligoni adiacenti basandosi su un'espressione applicata a un campo attributo selezionabile, e genera layer lineari dai bordi.
 
 ![](esempio.png)
 
@@ -20,7 +20,7 @@ Lo script apparirà in **Scripts** → **Vector geometry** → **Dissolve Adjace
 
 ```mermaid
 flowchart TD
-    Start([📥 Input Layer<br/>Poligoni con attributo note])
+    Start([📥 Input Layer<br/>Poligoni + Campo Attributo])
     
     Filter{🔍 Filtro Prefissi<br/>attivo?}
     FilterApply[✂️ Filtra per prefissi<br/>CEC, PdCC, PdC, etc.]
@@ -93,10 +93,10 @@ Output: 4 layer
 ### Logica Dissolve Poligonale
 
 I poligoni vengono dissolti insieme **SOLO** se:
-- Hanno lo **stesso valore** dell'espressione applicata all'attributo "note"
+- Hanno lo **stesso valore** dell'espressione applicata al campo attributo selezionato
 - Sono **geometricamente adiacenti** (condividono un confine)
 
-I valori "note" dei poligoni dissolti vengono **concatenati con virgola**, eliminando duplicati.
+I valori del campo selezionato vengono **concatenati con virgola**, eliminando duplicati.
 
 ### Logica Eliminazione Duplicati
 
@@ -110,21 +110,23 @@ I valori "note" dei poligoni dissolti vengono **concatenati con virgola**, elimi
 ## Parametri
 
 ### Input
-- **Input layer**: Layer poligonale con attributo "note"
+- **Input layer**: Layer poligonale di input
+- **Field name**: Campo attributo da utilizzare (selezionabile dal menu a tendina - default: "note")
 - **Filter prefixes**: Lista prefissi separati da virgola (es: `CEC,PdCC,Suevig`)
 - **Apply prefix filter**: Attiva il filtro per prefissi
 - **Expression**: Espressione per raggruppare (default: `regexp_substr("note",'(^.+\\d\\|)')`)
-- **Exception values**: Valori per cui gestire duplicati in modo speciale
-- **Keep duplicates for specific values**: Attiva le eccezioni
+  - *Nota: Se selezioni un campo diverso, l'espressione viene aggiornata automaticamente*
+- **Exception values**: Valori per cui gestire duplicati in modo speciale (separati da virgola)
+- **Keep duplicates for specific values**: Attiva le eccezioni (logica XOR)
 
 ### Output
 1. **Filtered polygons** (opzionale): Poligoni dopo il filtro
 2. **Dissolved polygons**: Poligoni dissolti single-part con attributi:
-   - `note`: valori concatenati con virgola
+   - `[campo selezionato]`: valori concatenati con virgola
    - `nro`: conteggio valori univoci
    - `id`: identificatore univoco
-3. **Lines without duplicates**: Segmenti dai bordi senza duplicati
-4. **Lines dissolved by attributes**: Linee unite per (note, nro, id)
+3. **Lines without duplicates**: Segmenti dai bordi senza duplicati geometrici
+4. **Lines dissolved by attributes**: Linee unite per (campo, nro, id) usando linemerge
 
 ## Esempio
 
@@ -155,7 +157,8 @@ I valori "note" dei poligoni dissolti vengono **concatenati con virgola**, elimi
 ## Requisiti
 
 - QGIS 3.20+
-- Layer poligonale con attributo "note"
+- Layer poligonale con almeno un campo attributo
+- Il campo selezionato deve contenere valori compatibili con l'espressione utilizzata
 
 ## Licenza
 
