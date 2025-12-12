@@ -128,6 +128,8 @@ I valori del campo selezionato vengono **concatenati con virgola**, eliminando d
 3. **Lines without duplicates**: Segmenti dai bordi senza duplicati geometrici
 4. **Lines dissolved by attributes**: Linee unite per (campo, nro, id) usando linemerge
 
+![](gui.png)
+
 ## Esempio
 
 **Input:** 4 poligoni
