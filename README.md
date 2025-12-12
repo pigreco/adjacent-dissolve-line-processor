@@ -2,6 +2,8 @@
 
 Algoritmo Processing per QGIS che dissolve poligoni adiacenti basandosi su un'espressione e genera layer lineari dai bordi.
 
+![](esempio.png)
+
 ## Installazione
 
 1. Apri QGIS
