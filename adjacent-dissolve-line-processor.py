@@ -38,6 +38,7 @@ from qgis.core import (
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterExpression,
+    QgsProcessingParameterField,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterString,
     QgsFeatureSink,
@@ -63,6 +64,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
 
     # Costanti per i parametri
     INPUT = 'INPUT'
+    FIELD_NAME = 'FIELD_NAME'
     EXPRESSION = 'EXPRESSION'
     USE_FILTER = 'USE_FILTER'
     FILTER_PREFIXES = 'FILTER_PREFIXES'
@@ -99,8 +101,9 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
         
         <h4>Parametri</h4>
         <ul>
-        <li><b>Input layer:</b> Layer poligonale con attributo "note"</li>
-        <li><b>Expression:</b> Espressione per raggruppare (es: <code>regexp_substr("note",'(^.+\\d\\|)')</code>)</li>
+        <li><b>Input layer:</b> Layer poligonale di input</li>
+        <li><b>Field name:</b> Campo attributo da utilizzare per il dissolve e le analisi</li>
+        <li><b>Expression:</b> Espressione per raggruppare (es: <code>regexp_substr("CAMPO",'(^.+\\d\\|)')</code>)</li>
         <li><b>Apply prefix filter:</b> Filtra per prefissi specifici (opzionale)</li>
         <li><b>Filter prefixes:</b> Lista separata da virgole (default: CEC,PdCC,PdC,PEC,PI,PR.CS,Suevig)</li>
         <li><b>Keep duplicates for specific values:</b> Attiva eccezioni per duplicati (opzionale)</li>
@@ -108,7 +111,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
         </ul>
         
         <h4>Logica Eccezioni Duplicati</h4>
-        <p>Quando attivata, controlla la presenza del valore di eccezione in "note" dei segmenti duplicati:</p>
+        <p>Quando attivata, controlla la presenza del valore di eccezione nel campo selezionato dei segmenti duplicati:</p>
         <ul>
         <li><b>Eccezione in NESSUNO:</b> elimina duplicato (normale)</li>
         <li><b>Eccezione in UNO SOLO:</b> mantieni entrambi i segmenti</li>
@@ -133,6 +136,17 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
                 self.INPUT,
                 self.tr('Input layer'),
                 [QgsProcessing.TypeVectorPolygon]
+            )
+        )
+
+        # Campo attributo da utilizzare
+        self.addParameter(
+            QgsProcessingParameterField(
+                self.FIELD_NAME,
+                self.tr('Field name'),
+                defaultValue='note',
+                parentLayerParameterName=self.INPUT,
+                type=QgsProcessingParameterField.Any
             )
         )
 
@@ -169,7 +183,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterString(
                 self.EXCEPTION_VALUES,
-                self.tr('Exception values in "note" (comma-separated, case-insensitive)'),
+                self.tr('Exception values (comma-separated, case-insensitive)'),
                 defaultValue='',
                 optional=True
             )
@@ -225,7 +239,17 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
                 self.invalidSourceError(parameters, self.INPUT)
             )
 
+        field_name = self.parameterAsString(parameters, self.FIELD_NAME, context)
+        if not field_name:
+            field_name = 'note'
+        
         expression_text = self.parameterAsExpression(parameters, self.EXPRESSION, context)
+        
+        # Se l'espressione contiene "note" e il campo selezionato è diverso, sostituisci
+        if field_name != 'note' and '"note"' in expression_text:
+            expression_text = expression_text.replace('"note"', '"{}"'.format(field_name))
+            feedback.pushInfo(self.tr('Espressione aggiornata: {}').format(expression_text))
+        
         use_filter = self.parameterAsBoolean(parameters, self.USE_FILTER, context)
         filter_prefixes_text = self.parameterAsString(parameters, self.FILTER_PREFIXES, context)
         use_duplicate_exception = self.parameterAsBoolean(parameters, self.USE_DUPLICATE_EXCEPTION, context)
@@ -236,16 +260,16 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
             exception_values = [v.strip().upper() for v in exception_values_text.split(',') if v.strip()]
             feedback.pushInfo(self.tr('Eccezioni duplicati: {}').format(', '.join(exception_values)))
 
-        # Verifica attributo "note"
-        if source.fields().indexOf('note') == -1:
+        # Verifica attributo selezionato
+        if source.fields().indexOf(field_name) == -1:
             raise QgsProcessingException(
-                self.tr('Il layer di input non contiene l\'attributo "note"')
+                self.tr('Il layer di input non contiene il campo "{}"').format(field_name)
             )
 
-        # Prepara fields output (note, nro, id)
+        # Prepara fields output (field_name, nro, id)
         fields = QgsFields()
-        note_field = source.fields().field('note')
-        fields.append(QgsField('note', note_field.type()))
+        selected_field = source.fields().field(field_name)
+        fields.append(QgsField(field_name, selected_field.type()))
         fields.append(QgsField('nro', QVariant.Int))
         fields.append(QgsField('id', QVariant.Int))
 
@@ -277,7 +301,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
                 source.fields(), source.wkbType(), source.sourceCrs()
             )
 
-            filter_exp = QgsExpression('regexp_substr("note", \'(^.+\\\\d)\')')
+            filter_exp = QgsExpression('regexp_substr("{}", \'(^.+\\\\d)\')'.format(field_name))
             exp_context = QgsExpressionContext()
             exp_context.appendScopes(QgsExpressionContextUtils.globalProjectLayerScopes(None))
             
@@ -296,7 +320,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
             feedback.pushInfo(self.tr('Features filtrate: {}').format(len(features)))
 
         # STEP 2: Dissolve poligonale
-        dissolved_polygons = self.dissolve_polygons(features, expression_text, feedback, context)
+        dissolved_polygons = self.dissolve_polygons(features, expression_text, field_name, feedback, context)
         
         # STEP 3: Converti a single-part e scrivi output poligonale
         unique_id = 1
@@ -308,7 +332,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
                 for part in parts:
                     out_feature = QgsFeature(fields)
                     out_feature.setGeometry(part)
-                    out_feature['note'] = note_val
+                    out_feature[field_name] = note_val
                     out_feature['nro'] = nro_val
                     out_feature['id'] = unique_id
                     sink_poly.addFeature(out_feature, QgsFeatureSink.FastInsert)
@@ -317,7 +341,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
             else:
                 out_feature = QgsFeature(fields)
                 out_feature.setGeometry(dissolved_geom)
-                out_feature['note'] = note_val
+                out_feature[field_name] = note_val
                 out_feature['nro'] = nro_val
                 out_feature['id'] = unique_id
                 sink_poly.addFeature(out_feature, QgsFeatureSink.FastInsert)
@@ -356,13 +380,13 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
         for seg_geom, note_val, nro_val, id_val in unique_segments:
             out_feature = QgsFeature(fields)
             out_feature.setGeometry(seg_geom)
-            out_feature['note'] = note_val
+            out_feature[field_name] = note_val
             out_feature['nro'] = nro_val
             out_feature['id'] = id_val
             sink_lines.addFeature(out_feature, QgsFeatureSink.FastInsert)
 
-        # STEP 8: Dissolve segmenti per (note, nro, id)
-        self.dissolve_lines_by_attributes(unique_segments, sink_lines_dissolved, fields, feedback)
+        # STEP 8: Dissolve segmenti per (field_name, nro, id)
+        self.dissolve_lines_by_attributes(unique_segments, sink_lines_dissolved, fields, field_name, feedback)
 
         feedback.pushInfo(self.tr('Processing completato!'))
 
@@ -376,7 +400,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
 
         return result
 
-    def dissolve_polygons(self, features, expression_text, feedback, context):
+    def dissolve_polygons(self, features, expression_text, field_name, feedback, context):
         """Dissolve poligoni per espressione e adiacenza."""
         exp = QgsExpression(expression_text)
         exp_context = QgsExpressionContext()
@@ -399,13 +423,13 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
             if len(group_features) == 1:
                 dissolved_results.append((
                     group_features[0].geometry(),
-                    group_features[0]['note'],
+                    group_features[0][field_name],
                     1
                 ))
             else:
                 clusters = self.find_adjacent_clusters(group_features)
                 for cluster in clusters:
-                    note_values = list(dict.fromkeys([f['note'] for f in cluster]))
+                    note_values = list(dict.fromkeys([f[field_name] for f in cluster]))
                     concatenated_note = ",".join(str(v) if v is not None else "" for v in note_values)
                     nro_count = len(note_values)
                     
@@ -506,8 +530,8 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
         coords2 = (round(p2.x(), 6), round(p2.y(), 6))
         return (coords1, coords2) if coords1 < coords2 else (coords2, coords1)
 
-    def dissolve_lines_by_attributes(self, segments, sink, fields, feedback):
-        """Dissolve segmenti per (note, nro, id) usando linemerge."""
+    def dissolve_lines_by_attributes(self, segments, sink, fields, field_name, feedback):
+        """Dissolve segmenti per (field_name, nro, id) usando linemerge."""
         groups = {}
         for seg_geom, note_val, nro_val, id_val in segments:
             key = (note_val, nro_val, id_val)
@@ -527,7 +551,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
             if merged_geom and not merged_geom.isNull():
                 out_feature = QgsFeature(fields)
                 out_feature.setGeometry(merged_geom)
-                out_feature['note'] = note_val
+                out_feature[field_name] = note_val
                 out_feature['nro'] = nro_val
                 out_feature['id'] = id_val
                 sink.addFeature(out_feature, QgsFeatureSink.FastInsert)
