@@ -94,39 +94,45 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return self.tr("""
+        <style>
+        body { color: palette(window-text); }
+        h3 { color: palette(highlight); }
+        h4 { color: palette(highlight); margin-top: 12px; }
+        </style>
+        
         <h3>Dissolve Adjacent by Expression</h3>
         
-        <p>Dissolve poligoni adiacenti con la stessa espressione e genera layer lineari dai bordi.</p>
+        <p><strong>Dissolve poligoni adiacenti con la stessa espressione e genera layer lineari dai bordi.</strong></p>
         
         <h4>Parametri</h4>
         <ul>
-        <li><b>Input layer:</b> Layer poligonale di input</li>
-        <li><b>Field name:</b> Campo attributo da utilizzare (selezionabile dal menu a tendina dei campi del layer)</li>
-        <li><b>Filter prefixes:</b> Lista separata da virgole (default: CEC,PdCC,PdC,PEC,PI,PR.CS,Suevig)</li>
-        <li><b>Apply prefix filter:</b> Filtra per prefissi specifici (opzionale)</li>
-        <li><b>Expression:</b> Espressione per raggruppare (es: <code>regexp_substr("CAMPO",'(^.+\\d\\|)')</code>)<br>
-        <i>Nota: Se selezioni un campo diverso da "note", l'espressione verrà aggiornata automaticamente</i></li>
-        <li><b>Exception values:</b> Valori per cui gestire duplicati in modo speciale (separati da virgola)</li>
-        <li><b>Keep duplicates for specific values:</b> Attiva eccezioni per duplicati (opzionale)</li>
+        <li><strong>Input layer:</strong> Layer poligonale di input</li>
+        <li><strong>Field name:</strong> Campo attributo da utilizzare (selezionabile dal menu a tendina dei campi del layer)</li>
+        <li><strong>Filter prefixes:</strong> Lista separata da virgole (default: CEC,PdCC,PdC,PEC,PI,PR.CS,Suevig)</li>
+        <li><strong>Apply prefix filter:</strong> Filtra per prefissi specifici (opzionale)</li>
+        <li><strong>Expression:</strong> Espressione per raggruppare (es: <code>regexp_substr("CAMPO",'(^.+\\d\\|)')</code>)<br>
+        <em>Nota: Se selezioni un campo diverso da "note", l'espressione verrà aggiornata automaticamente</em></li>
+        <li><strong>Exception values:</strong> Valori per cui gestire duplicati in modo speciale (separati da virgola)</li>
+        <li><strong>Keep duplicates for specific values:</strong> Attiva eccezioni per duplicati (opzionale)</li>
         </ul>
         
         <h4>Logica Eccezioni Duplicati</h4>
         <p>Quando attivata, controlla la presenza del valore di eccezione nel campo selezionato dei segmenti duplicati:</p>
         <ul>
-        <li><b>Eccezione in NESSUNO:</b> elimina duplicato (normale)</li>
-        <li><b>Eccezione in UNO SOLO:</b> mantieni entrambi i segmenti (logica XOR)</li>
-        <li><b>Eccezione in ENTRAMBI:</b> elimina duplicato</li>
+        <li><strong>Eccezione in NESSUNO:</strong> elimina duplicato (normale)</li>
+        <li><strong>Eccezione in UNO SOLO:</strong> mantieni entrambi i segmenti (logica XOR)</li>
+        <li><strong>Eccezione in ENTRAMBI:</strong> elimina duplicato</li>
         </ul>
         
         <h4>Output</h4>
         <ol>
-        <li><b>Filtered polygons:</b> Poligoni dopo il filtro (se applicato)</li>
-        <li><b>Dissolved polygons:</b> Poligoni dissolti single-part con campi: campo selezionato, nro, id</li>
-        <li><b>Lines without duplicates:</b> Segmenti dai bordi senza duplicati geometrici</li>
-        <li><b>Lines dissolved by attributes:</b> Segmenti dissolti per (campo, nro, id)</li>
+        <li><strong>Filtered polygons:</strong> Poligoni dopo il filtro (se applicato)</li>
+        <li><strong>Dissolved polygons:</strong> Poligoni dissolti single-part con campi: campo selezionato, nro, id</li>
+        <li><strong>Lines without duplicates:</strong> Segmenti dai bordi senza duplicati geometrici</li>
+        <li><strong>Lines dissolved by attributes:</strong> Segmenti dissolti per (campo, nro, id)</li>
         </ol>
         <hr>
-        <p><b>Autore:</b> Salvatore Fiandaca - 2025 | <b>Versione:</b> v1.0</p>
+        <p><strong>Autore:</strong> Salvatore Fiandaca - 2025 | <strong>Versione:</strong> v1.0</p>
         """)
 
     def initAlgorithm(self, config=None):
