@@ -111,7 +111,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
         <li><strong>Filter prefixes:</strong> Lista separata da virgole (default: CEC,PdCC,PdC,PEC,PI,PR.CS,Suevig)</li>
         <li><strong>Apply prefix filter:</strong> Filtra per prefissi specifici (opzionale)</li>
         <li><strong>Expression:</strong> Espressione per raggruppare (es: <code>regexp_substr("CAMPO",'(^.+\\d\\|)')</code>)<br>
-        <em>Nota: Se selezioni un campo diverso da "note", l'espressione verrà aggiornata automaticamente</em></li>
+        <em>Nota: Se selezioni un campo diverso da "note", l'espressione verra aggiornata automaticamente</em></li>
         <li><strong>Exception values:</strong> Valori per cui gestire duplicati in modo speciale (separati da virgola)</li>
         <li><strong>Keep duplicates for specific values:</strong> Attiva eccezioni per duplicati (opzionale)</li>
         </ul>
