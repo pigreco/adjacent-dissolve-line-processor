@@ -251,7 +251,7 @@ class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
         
         expression_text = self.parameterAsExpression(parameters, self.EXPRESSION, context)
         
-        # Se l'espressione contiene "note" e il campo selezionato è diverso, sostituisci
+        # Se l'espressione contiene "note" e il campo selezionato e diverso, sostituisci
         if field_name != 'note' and '"note"' in expression_text:
             expression_text = expression_text.replace('"note"', '"{}"'.format(field_name))
             feedback.pushInfo(self.tr('Espressione aggiornata: {}').format(expression_text))
