@@ -31,7 +31,7 @@
 ***************************************************************************
 """
 
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -53,7 +53,6 @@ from qgis.core import (
     QgsExpressionContextUtils,
     QgsPointXY
 )
-from PyQt5.QtCore import QVariant
 
 
 class DissolveAdjacentByExpressionAlgorithm(QgsProcessingAlgorithm):
